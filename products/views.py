@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Product
 from django.utils import timezone
@@ -17,14 +17,25 @@ def create(request):
                 product.url = request.POST['url']
             else:
                 product.url = 'https://' + request.POST['url']
-                product.icon = request.FILES['icon']
-                product.image = request.FILES['image']
-                product.pub_date = timezone.datetime.now()
-                print('------>', request.user)
-                product.hunter = request.user
-                product.save()
-                return redirect('home')
+            product.icon = request.FILES['icon']
+            product.image = request.FILES['image']
+            product.pub_date = timezone.datetime.now()
+            product.hunter = request.user
+            product.save()
+            return redirect('/products/' + str(product.id))
         else:
             return render(request, 'products/create.html',{'error':'All fields are required'})
     else:
         return render(request, 'products/create.html')
+
+def detail(request, product_id):
+    product = get_object_or_404(Product, pk=product_id)
+    return render(request, 'products/detail.html',{'product':product})
+
+@login_required
+def upvote(request, product_id):
+    if request.method == "POST":
+        product = get_object_or_404(Product, pk=product_id)
+        product.votes += 1
+        product.save()
+        return redirect('/products/' + str(product.id))
